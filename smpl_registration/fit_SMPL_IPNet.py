@@ -6,7 +6,7 @@ Cite: Combining Implicit Function Learning and Parametric Models for 3D Human Re
 import os
 from os.path import split, join, exists
 import sys
-import ipdb
+# import ipdb
 import json
 import torch
 import numpy as np
@@ -21,6 +21,7 @@ from tqdm import tqdm
 
 from fit_SMPL import save_meshes, backward_step
 from fit_SMPLD import optimize_offsets
+from post_mesh_fix import optimize_offsets_only
 # from fit_SMPLD import forward_step as forward_step_offsets
 from lib.smpl_paths import SmplPaths
 from lib.th_smpl_prior import get_prior
@@ -30,7 +31,26 @@ from lib.body_objectives import batch_get_pose_obj
 
 NUM_PARTS = 14  # number of parts that the smpl is segmented into.
 
+def interpenetration_loss(vertices=None, faces=None, search_tree=None, pen_distance=None, tri_filtering_module=None, coll_loss_weight=0.0):
+    pen_loss = torch.tensor(0.0).unsqueeze(0).cuda()
+    batch_size = 1 # projected_joints.shape[0] 
 
+    triangles = torch.index_select(vertices, 1, faces.type(torch.LongTensor).cuda().view(-1)).view(1, -1, 3, 3)
+
+    with torch.no_grad():
+        collision_idxs = search_tree(triangles)
+
+    # Remove unwanted collisions
+    if tri_filtering_module is not None:
+        collision_idxs = tri_filtering_module(collision_idxs)
+
+    if collision_idxs.ge(0).sum().item() > 0:
+        pen_loss = torch.sum(
+            coll_loss_weight *
+            pen_distance(triangles, collision_idxs)).unsqueeze(0)
+
+    return pen_loss
+    
 def get_loss_weights():
     """Set loss weights"""
 
@@ -38,7 +58,7 @@ def get_loss_weights():
                    'm2s': lambda cst, it: 10. ** 2 * cst / (1 + it),
                    'betas': lambda cst, it: 10. ** 0 * cst / (1 + it),
                    'offsets': lambda cst, it: 10. ** -1 * cst / (1 + it),
-                   'pose_pr': lambda cst, it: 10. ** -5 * cst / (1 + it),
+                   'pose_pr': lambda cst, it: 10. ** -4 * cst / (1 + it),
                    'lap': lambda cst, it: cst / (1 + it),
                    'part': lambda cst, it: 10. ** 2 * cst / (1 + it)
                    }
@@ -196,7 +216,6 @@ def optimize_pose_only(th_scan_meshes, smpl, iterations, steps_per_iter, scan_pa
     smpl.pose.data = split_smpl.pose.data
     smpl.betas.data = split_smpl.betas.data
     smpl.trans.data = split_smpl.trans.data
-
     print('** Optimised smpl pose **')
 
 
@@ -213,7 +232,7 @@ def fit_SMPL(scans, scan_labels, gender='male', save_path=None, scale_file=None,
     th_faces = torch.tensor(smpl_faces.astype('float32'), dtype=torch.long).to(DEVICE)
 
     # Load SMPL parts
-    part_labels = pkl.load(open('/BS/bharat-3/work/IPNet/assets/smpl_parts_dense.pkl', 'rb'))
+    part_labels = pkl.load(open('/home/chen/IPNet/assets/smpl_parts_dense.pkl', 'rb'))
     labels = np.zeros((6890,), dtype='int32')
     for n, k in enumerate(part_labels):
         labels[part_labels[k]] = n
@@ -234,10 +253,10 @@ def fit_SMPL(scans, scan_labels, gender='male', save_path=None, scale_file=None,
     prior = get_prior(gender=gender, precomputed=True)
     pose_init = torch.zeros((batch_sz, 72))
     pose_init[:, 3:] = prior.mean
-    betas, pose, trans = torch.zeros((batch_sz, 300)), pose_init, torch.zeros((batch_sz, 3))
-
+    # betas, pose, trans = torch.zeros((batch_sz, 300)), pose_init, torch.zeros((batch_sz, 3))
+    betas, pose, trans = torch.zeros((batch_sz, 10)), pose_init, torch.zeros((batch_sz, 3))
     # Init SMPL, pose with mean smpl pose, as in ch.registration
-    smpl = th_batch_SMPL(batch_sz, betas, pose, trans, faces=th_faces).to(DEVICE)
+    smpl = th_batch_SMPL(batch_sz, betas, pose, trans, faces=th_faces, gender=gender).to(DEVICE)
     smpl_part_labels = torch.cat([labels] * batch_sz, axis=0)
 
     th_scan_meshes, centers = [], []
@@ -300,7 +319,8 @@ def fit_SMPLD(scans, smpl_pkl, gender='male', save_path=None, scale_file=None):
         p, b, t = smpl_dict['pose'], smpl_dict['betas'], smpl_dict['trans']
         pose.append(p)
         if len(b) == 10:
-            temp = np.zeros((300,))
+            # temp = np.zeros((300,))
+            temp = np.zeros((10,))
             temp[:10] = b
             b = temp.astype('float32')
         betas.append(b)
@@ -308,7 +328,7 @@ def fit_SMPLD(scans, smpl_pkl, gender='male', save_path=None, scale_file=None):
     pose, betas, trans = np.array(pose), np.array(betas), np.array(trans)
 
     betas, pose, trans = torch.tensor(betas), torch.tensor(pose), torch.tensor(trans)
-    smpl = th_batch_SMPL(batch_sz, betas, pose, trans, faces=th_faces).cuda()
+    smpl = th_batch_SMPL(batch_sz, betas, pose, trans, faces=th_faces, gender=gender).cuda()
 
     verts, _, _, _ = smpl()
     init_smpl_meshes = [tm.from_tensors(vertices=v.clone().detach(),
@@ -330,10 +350,11 @@ def fit_SMPLD(scans, smpl_pkl, gender='male', save_path=None, scale_file=None):
             th_scan_meshes[n].vertices *= torch.tensor(dat[0]).to(DEVICE)
 
     # Optimize
-    optimize_offsets(th_scan_meshes, smpl, init_smpl_meshes, 5, 10)
+    optimize_offsets(th_scan_meshes, smpl, init_smpl_meshes, 10, 12)
+    # optimize_offsets_only(th_scan_meshes, smpl, init_smpl_meshes, 3, 10)
     print('Done')
 
-    verts, _, _, _ = smpl()
+    verts, _, _, _ = smpl.get_vertices_clean()
     th_smpl_meshes = [tm.from_tensors(vertices=v,
                                       faces=smpl.faces) for v in verts]
 
@@ -341,19 +362,19 @@ def fit_SMPLD(scans, smpl_pkl, gender='male', save_path=None, scale_file=None):
         if not exists(save_path):
             os.makedirs(save_path)
 
-        names = [split(s)[1] for s in scans]
+        names = ['full.ply'] # [split(s)[1] for s in scans]
 
         # Save meshes
         save_meshes(th_smpl_meshes, [join(save_path, n.replace('.ply', '_smpld.obj')) for n in names])
         save_meshes(th_scan_meshes, [join(save_path, n) for n in names])
         # Save params
         for p, b, t, d, n in zip(smpl.pose.cpu().detach().numpy(), smpl.betas.cpu().detach().numpy(),
-                                 smpl.trans.cpu().detach().numpy(), smpl.offsets.cpu().detach().numpy(), names):
+                                 smpl.trans.cpu().detach().numpy(), smpl.offsets_clean.cpu().detach().numpy(), names):
             smpl_dict = {'pose': p, 'betas': b, 'trans': t, 'offsets': d}
             pkl.dump(smpl_dict, open(join(save_path, n.replace('.ply', '_smpld.pkl')), 'wb'))
 
     return smpl.pose.cpu().detach().numpy(), smpl.betas.cpu().detach().numpy(), \
-           smpl.trans.cpu().detach().numpy(), smpl.offsets.cpu().detach().numpy()
+           smpl.trans.cpu().detach().numpy(), smpl.offsets_clean.cpu().detach().numpy()
 
 DEVICE = 'cuda'
 if __name__ == "__main__":
@@ -361,11 +382,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Run Model')
     parser.add_argument('inner_path', type=str)  # predicted by IPNet
-    parser.add_argument('outer_path', type=str)  # predicted by IPNet
+    # parser.add_argument('outer_path', type=str)  # predicted by IPNet
     parser.add_argument('inner_labels', type=str)  # predicted by IPNet
     parser.add_argument('scale_file', type=str, default=None)  # obtained from utils/process_scan.py
     parser.add_argument('save_path', type=str)
-    parser.add_argument('-gender', type=str, default='male')  # can be female/ male/ neutral
+    # parser.add_argument('-gender', type=str, default='female')  # can be female/ male/ neutral
     parser.add_argument('--display', default=None)
     args = parser.parse_args()
 
@@ -377,7 +398,12 @@ if __name__ == "__main__":
     # args.display = None
     # args.save_path = '/BS/bharat-3/work/IPNet/DO_NOT_RELEASE/test_data'
     # args.gender = 'male'
+    
+    # args.outer_path = '/home/chen/IPNet_SMPLX/output_zjdong/full.ply'
+    # args.gender = 'male'
 
+    args.outer_path = '/home/chen/IPNet_SMPLX/assets/Pablo_outdoor_cleaned_scaled.obj'
+    args.gender = 'male'
     _, _, _ = fit_SMPL([args.inner_path], scan_labels=[args.inner_labels], display=args.display, save_path=args.save_path,
                        scale_file=[args.scale_file], gender=args.gender)
 

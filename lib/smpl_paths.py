@@ -107,7 +107,7 @@ class SmplPaths:
 
     @staticmethod
     def get_faces():
-        fname = join(ROOT, 'template', 'faces.npy')
+        fname = '/home/chen/IPNet/faces.npy'# join(ROOT, 'template', 'faces.npy')
         return np.load(fname)
 
     @staticmethod

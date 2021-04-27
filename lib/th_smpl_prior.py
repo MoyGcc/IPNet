@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import ipdb
 
-
+# is this the best prior we want to use? or shall we replace it with a better one like vposer? 
 def get_prior(gender='male', precomputed=False):
     if precomputed:
         prior = Prior(sm=None)

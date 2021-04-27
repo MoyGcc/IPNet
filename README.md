@@ -12,11 +12,9 @@ Link to paper: http://arxiv.org/abs/2007.11432
 6. Python 3.7.6
 7. Tensorboard 1.15
 8. Pytorch 1.4
-9. SMPL pytorch from https://github.com/gulvarol/smplpytorch. I have included these files in this repo.
 
 ## Download pre-trained models
-1. Download IPNet weights: https://datasets.d2.mpi-inf.mpg.de/IPNet2020/IPNet_p5000_01_exp_id01.zip \
-IPNet single surface: https://nextcloud.mpi-klsb.mpg.de/index.php/s/4nomcDH8EGwbzNi
+1. Download IPNet weights: https://datasets.d2.mpi-inf.mpg.de/IPNet2020/IPNet_p5000_01_exp_id01.zip
 2. `mkdir <IPNet directory>/experiments`
 3. Put the downloaded weights in `<IPNet directory>/experiments/`
 ## Preprocess data for training
@@ -28,9 +26,9 @@ We used sigma=0.15 and 0.015, ext_in and ext_out are just suffix for naming file
 4. Generate voxelized input : `python voxelized_pointcloud_sampling.py <scan_scaled.obj> <save_path> --ext 01 --res 128 --num_points 5000`
 
 ## Run demo IP-Net
-1. Test on single scan/PC: `python test_IPNet.py assets/scan.obj experiments/IPNet_p5000_01_exp_id01/checkpoints/checkpoint_epoch_249.tar out_dir -m IPNet`\
+1. Test on single scan/PC: `python3 test_IPNet.py assets/scan.obj experiments/IPNet_p5000_01_exp_id01/checkpoints/checkpoint_epoch_249.tar out_dir -m IPNet`\
 (It is better to use dataloader for testing on a dataset: `python generate.py -dist 0.5 0.5 -std_dev 0.15 0.015 -res 128 -m IPNet -ext 01 -suffix 01 -pc_samples 5000 -exp_id 01`)
-2. Fit SMPLD to IPNet predictions: `python smpl_registration/fit_SMPL_IPNet.py out_dir/body.ply out_dir/full.ply out_dir/parts.npy out_dir/cent.npy out_dir/`
+2. Fit SMPLD to IPNet predictions: `python3 smpl_registration/fit_SMPL_IPNet.py out_dir/body.ply out_dir/full.ply out_dir/parts.npy out_dir/cent.npy out_dir/`
 
 For training/ testing on dataset, you'd need the following directory structure if you'd like to use our dataloaders:
 

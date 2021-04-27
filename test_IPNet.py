@@ -66,6 +66,7 @@ def main(args):
         full, body, parts = gen.generate_meshs_all_parts(data)
         body.set_vertex_colors_from_weights(parts)
         body.write_ply(args.out_path + '/body.ply')
+        body.write_obj(args.out_path + '/body_nosmpl.obj')
         np.save(args.out_path + '/parts.npy', parts)
 
     elif args.model == 'IPNetMano':
@@ -76,7 +77,7 @@ def main(args):
         full = gen.generate_mesh_all(data)
 
     full.write_ply(args.out_path + '/full.ply')
-
+    full.write_obj(args.out_path + '/full_nosmpl.obj')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run Model')
@@ -93,7 +94,7 @@ if __name__ == "__main__":
     # number of points queried for to produce the result
     parser.add_argument('-retrieval_res', default=256, type=int)
     # number of points from the querey grid which are put into the batch at once
-    parser.add_argument('-batch_points', default=300000, type=int)
+    parser.add_argument('-batch_points', default=100000, type=int)
     # which model to use, e.g. "-m IPNet"
     parser.add_argument('-m', '--model', default='IPNetSingleSurface', type=str)
     args = parser.parse_args()

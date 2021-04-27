@@ -1,8 +1,3 @@
-"""
-Code taken from https://github.com/gulvarol/smplpytorch
-Modified such that SMPL now also has per-vertex displacements.
-"""
-
 import os
 
 import numpy as np
@@ -10,13 +5,13 @@ import torch
 from torch.nn import Module
 
 import sys
-sys.path.append('../smplpytorch')
+sys.path.append('/BS/bharat/work/installation/smplpytorch')
 
 from smplpytorch.native.webuser.serialization import ready_arguments
 from smplpytorch.pytorch import rodrigues_layer
 from smplpytorch.pytorch.tensutils import (th_posemap_axisang, th_with_zeros, th_pack, make_list, subtract_flat_id)
 
-print('Using BLB SMPL from the project: LearningRegistration')
+# print('Using BLB SMPL from the project: LearningRegistration')
 
 
 class SMPL_Layer(Module):
@@ -40,11 +35,13 @@ class SMPL_Layer(Module):
         if gender == 'neutral':
             self.model_path = os.path.join(model_root, 'basicModel_neutral_lbs_10_207_0_v1.0.0.pkl')
         elif gender == 'female':
+            self.model_path = '/home/chen/3DPW/readme_and_demo/smpl/models/SMPL_FEMALE.pkl'
             # self.model_path = os.path.join(model_root, 'basicModel_f_lbs_10_207_0_v1.0.0.pkl')
-            self.model_path = os.path.join(model_root, 'female_model.pkl')
+            # self.model_path = os.path.join(model_root, 'female_model.pkl')
         elif gender == 'male':
+            self.model_path = '/home/chen/3DPW/readme_and_demo/smpl/models/SMPL_MALE.pkl'
             # self.model_path = os.path.join(model_root, 'basicModel_m_lbs_10_207_0_v1.0.0.pkl')
-            self.model_path = os.path.join(model_root, 'male_model.pkl')
+            # self.model_path = os.path.join(model_root, 'male_model.pkl')
 
         smpl_data = ready_arguments(self.model_path)
         self.smpl_data = smpl_data
@@ -76,7 +73,8 @@ class SMPL_Layer(Module):
                 th_pose_axisang,
                 th_betas=torch.zeros(1),
                 th_trans=torch.zeros(1, 3),
-                th_offsets=None, scale = 1.):
+                th_offsets=None, scale = 1.,
+                return_lbs = False):
         """
         Args:
         th_pose_axisang (Tensor (batch_size x 72)): pose parameters in axis-angle representation
@@ -158,7 +156,12 @@ class SMPL_Layer(Module):
         ], 1)
 
         th_verts = (th_T * th_rest_shape_h.unsqueeze(1)).sum(2).transpose(2, 1)
+        # th_verts_temp = torch.matmul(th_T.transpose(0,3)[..., 0], th_rest_shape_h.transpose(0,2))
+        # inverse!
+        # h_rest_shape_h.transpose(0,2) == torch.matmul(th_T.transpose(0,3)[..., 0].inverse(), th_verts_temp)
+
         th_verts = th_verts[:, :, :3]
+        # th_verts_temp = th_verts_temp[:, :3, 0].unsqueeze(0)
         th_jtr = torch.stack(th_results_global, dim=1)[:, :, :3, 3]
 
         # Scale
@@ -174,6 +177,7 @@ class SMPL_Layer(Module):
         # else:
         th_jtr = th_jtr + th_trans.unsqueeze(1)
         th_verts = th_verts + th_trans.unsqueeze(1)
-
+        if return_lbs == True:
+            return th_verts, th_jtr, th_v_posed, naked, th_T
         # Vertices and joints in meters
         return th_verts, th_jtr, th_v_posed, naked

@@ -10,21 +10,21 @@ import sys
 sys.path.append('..')
 
 import pickle as pkl
-from lib.smplx.body_models import SMPL
+from lib.smplx.body_models import SMPLX
 
-def get_tpose_smpl():
+def get_tpose_smplx():
     # sp = SmplPaths(gender='neutral')
-    # smpl = sp.get_smpl()
-    # smpl.trans[:] = 0
-    # smpl.pose[:] = 0
-    smpl_output = SMPL(model_path="/home/chen/pytorch3d_xu/pytorch3d/smpl/smpl_model", batch_size=1, gender='neutral')()
-    return smpl_output
+    # smplx = sp.get_smpl()
+    # smplx.trans[:] = 0
+    # smplx.pose[:] = 0
+    smplx_output = SMPLX(model_path="/home/chen/SMPLX/models/smplx", batch_size=1, gender='neutral')()
+    return smplx_output
 
 
 def cut_right_forearm(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
@@ -37,25 +37,11 @@ def cut_right_forearm(display=False):
     print('right_forearm ', np.where(col)[0].shape)
     return col
 
-def cut_right_hand(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
 
-    ms = Mesh(v=verts, f=faces)
-    col = np.zeros(verts.shape[0])
-    col[verts[:, 0] < -0.69] = 1  # right hand
-
-    if display:
-        ms.set_vertex_colors_from_weights(col)
-        ms.show()
-    np.save('smpl_right_hand_idx.npy', np.where(col)[0])
-    print('right_hand', np.where(col)[0].shape)
-    return col
 def cut_left_forearm(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
@@ -68,26 +54,11 @@ def cut_left_forearm(display=False):
     print('left_forearm ', np.where(col)[0].shape)
     return col
 
-def cut_left_hand(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
-
-    ms = Mesh(v=verts, f=faces)
-    col = np.zeros(verts.shape[0])
-    col[verts[:, 0] > 0.69] = 1  # left hand
-
-    if display:
-        ms.set_vertex_colors_from_weights(col)
-        ms.show()
-    np.save('smpl_left_hand_idx.npy', np.where(col)[0])
-    print('left_hand ', np.where(col)[0].shape)
-    return col
 
 def cut_right_midarm(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
@@ -102,9 +73,9 @@ def cut_right_midarm(display=False):
 
 
 def cut_right_upperarm(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
@@ -119,9 +90,9 @@ def cut_right_upperarm(display=False):
 
 
 def cut_left_midarm(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
@@ -136,9 +107,9 @@ def cut_left_midarm(display=False):
 
 
 def cut_left_upperarm(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
@@ -150,30 +121,16 @@ def cut_left_upperarm(display=False):
 
     print('left_upperarm ', np.where(col)[0].shape)
     return col
-def cut_from_shoulder(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
 
-    ms = Mesh(v=verts, f=faces)
-    col = np.zeros(verts.shape[0])
-    col[verts[:, 1] > 0.15] = 1
-
-    if display:
-        ms.set_vertex_colors_from_weights(col)
-        ms.show()
-    np.save('from_shoulder_idx.npy', np.where(col)[0])
-    print('from_shoulder ', np.where(col)[0].shape)
-    return col
 
 def cut_head(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
-    col[verts[:, 1] > 0.3] = 1
+    col[verts[:, 1] > 0.16] = 1
 
     if display:
         ms.set_vertex_colors_from_weights(col)
@@ -182,30 +139,15 @@ def cut_head(display=False):
     print('head ', np.where(col)[0].shape)
     return col
 
-def cut_face(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
-
-    ms = Mesh(v=verts, f=faces)
-    col = np.zeros(verts.shape[0])
-    col[(verts[:, 1] > 0.32) & (verts[:, 1] < 0.48) & (verts[:, 2] > -0.015)] = 1
-
-    if display:
-        ms.set_vertex_colors_from_weights(col)
-        ms.show()
-    np.save('face_idx.npy', np.where(col)[0])
-    print('face ', np.where(col)[0].shape)
-    return col
 
 def cut_upper_right_leg(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
-    col[(verts[:, 1] < -0.3) & (verts[:, 0] < 0) & (verts[:, 1] >= -0.7)] = 1
+    col[(verts[:, 1] < -0.44) & (verts[:, 0] < 0) & (verts[:, 1] >= -0.84)] = 1
 
     if display:
         ms.set_vertex_colors_from_weights(col)
@@ -216,13 +158,13 @@ def cut_upper_right_leg(display=False):
 
 
 def cut_right_leg(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
-    col[(verts[:, 1] < -0.7) & (verts[:, 0] < 0) & (verts[:, 1] > -1)] = 1
+    col[(verts[:, 1] < -0.84) & (verts[:, 0] < 0) & (verts[:, 1] > -1.14)] = 1
 
     if display:
         ms.set_vertex_colors_from_weights(col)
@@ -233,30 +175,30 @@ def cut_right_leg(display=False):
 
 
 def cut_right_foot(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
-    col[(verts[:, 1] < -1) & (verts[:, 0] < 0)] = 1
+    col[(verts[:, 1] < -1.14) & (verts[:, 0] < 0)] = 1
 
     if display:
         ms.set_vertex_colors_from_weights(col)
         ms.show()
-    np.save('smpl_right_foot_idx.npy', np.where(col)[0])
-    print('right_foot ', np.where(col)[0].shape)
+
+    print('left_foot ', np.where(col)[0].shape)
     return col
 
 
 def cut_upper_left_leg(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
-    col[(verts[:, 1] < -0.3) & (verts[:, 0] >= 0) & (verts[:, 1] >= -0.7)] = 1
+    col[(verts[:, 1] < -0.44) & (verts[:, 0] >= 0) & (verts[:, 1] >= -0.84)] = 1
 
     if display:
         ms.set_vertex_colors_from_weights(col)
@@ -267,13 +209,13 @@ def cut_upper_left_leg(display=False):
 
 
 def cut_left_leg(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
-    col[(verts[:, 1] < -0.7) & (verts[:, 0] >= 0) & (verts[:, 1] > -1)] = 1
+    col[(verts[:, 1] < -0.84) & (verts[:, 0] >= 0) & (verts[:, 1] > -1.14)] = 1
 
     if display:
         ms.set_vertex_colors_from_weights(col)
@@ -284,34 +226,30 @@ def cut_left_leg(display=False):
 
 
 def cut_left_foot(display=False):
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
     col = np.zeros(verts.shape[0])
-    col[(verts[:, 1] < -1) & (verts[:, 0] >= 0)] = 1
+    col[(verts[:, 1] < -1.14) & (verts[:, 0] >= 0)] = 1
 
     if display:
         ms.set_vertex_colors_from_weights(col)
         ms.show()
-    np.save('smpl_left_foot_idx.npy', np.where(col)[0])
+
     print('left_foot ', np.where(col)[0].shape)
     return col
 
 
 if __name__ == "__main__":
-    # cut_face(False)
-    # cut_right_hand(False)
-    # cut_left_hand(False)
-    # cut_from_shoulder(False)
-    smpl = get_tpose_smpl()
-    verts = smpl.vertices.detach().cpu().numpy().squeeze()
-    faces = smpl.faces
+    smplx = get_tpose_smplx()
+    verts = smplx.vertices.detach().cpu().numpy().squeeze()
+    faces = smplx.faces
 
     ms = Mesh(v=verts, f=faces)
 
-    col = np.zeros((6890,))
+    col = np.zeros((10475,))
     display = False
     rfa = cut_right_forearm(display)
     col += (rfa * 0.1)
@@ -366,13 +304,14 @@ if __name__ == "__main__":
 
     parts = collections.OrderedDict(sorted(parts.items()))
 
-    col = np.zeros((6890,))
+    col = np.zeros((10475,))
     for n, k in enumerate(parts):
         col[parts[k]] = n
+    col[:8129] = 0
     ms.set_vertex_colors_from_weights(col)
     ms.show()
 
-    import ipdb; ipdb.set_trace()
+    # import ipdb; ipdb.set_trace()
 
-    # pkl.dump(parts, open('/home/chen/IPNet/assets/smpl_parts_dense.pkl', 'wb'))
+    pkl.dump(parts, open('/home/chen/IPNet_SMPLX/assets/smplx_parts_dense.pkl', 'wb'))
     print('Done')

@@ -6,12 +6,21 @@ If code works:
 else:
     Author: Anonymous
 '''
+import numpy as np
+import pickle as pkl
 import torch
 import torch.nn as nn
 from lib.smpl_layer import SMPL_Layer
 from lib.body_objectives import torch_pose_obj_data
 from lib.torch_functions import batch_sparse_dense_matmul
-
+# smpl_head_idx = pkl.load(open('/home/chen/IPNet_SMPLX/assets/smpl_parts_dense.pkl', 'rb'), encoding='latin1')['head']
+# smpl_face_idx = np.load('/home/chen/IPNet_SMPLX/assets/smpl_face_idx.npy')
+smpl_right_hand_idx = np.load('/home/chen/IPNet_SMPLX/assets/smpl_right_hand_idx.npy')
+smpl_left_hand_idx = np.load('/home/chen/IPNet_SMPLX/assets/smpl_left_hand_idx.npy')
+binary_mask = torch.ones((1, 6890, 3)).cuda()
+# binary_mask[:,smpl_face_idx,:] = 0.
+binary_mask[:,smpl_right_hand_idx,:] = 0.
+binary_mask[:,smpl_left_hand_idx,:] = 0.
 
 class th_batch_SMPL_split_params(nn.Module):
     """
@@ -133,7 +142,15 @@ class th_batch_SMPL(nn.Module):
                                               th_trans=self.trans,
                                               th_offsets=self.offsets)
         return verts, jtr, tposed, naked
-
+    def get_vertices_clean(self):
+        self.offsets_clean = self.offsets.detach().clone()
+        self.offsets_clean = self.offsets_clean * binary_mask
+        # self.offsets_clean[:,smpl_head_idx,:] /= 2.
+        verts, jtr, tposed, naked = self.smpl(self.pose,
+                                   th_betas=self.betas,
+                                   th_trans=self.trans,
+                                   th_offsets=self.offsets_clean)
+        return verts, jtr, tposed, naked
     def get_landmarks(self):
         """Computes body25 joints for SMPL along with hand and facial landmarks"""
 
@@ -173,9 +190,19 @@ class th_SMPL(nn.Module):
         self.smpl = SMPL_Layer(center_idx=0, gender=gender,
                           model_root='/BS/bharat/work/installation/smplpytorch/smplpytorch/native/models')
 
-    def forward(self):
-        verts, Jtr, tposed, naked = self.smpl(self.pose.unsqueeze(axis=0),
-                                              th_betas=self.betas.unsqueeze(axis=0),
-                                              th_trans=self.trans.unsqueeze(axis=0),
-                                              th_offsets=self.offsets.unsqueeze(axis=0))
-        return verts[0]
+    def forward(self, return_lbs = False):
+        if return_lbs == True:
+            verts, Jtr, tposed, naked, th_T = self.smpl(self.pose.unsqueeze(axis=0),
+                                                        th_betas=self.betas.unsqueeze(axis=0),
+                                                        th_trans=self.trans.unsqueeze(axis=0),
+                                                        th_offsets=self.offsets.unsqueeze(axis=0),
+                                                        return_lbs = return_lbs)
+            return verts[0], th_T
+        else:
+
+            verts, Jtr, tposed, naked = self.smpl(self.pose.unsqueeze(axis=0),
+                                                th_betas=self.betas.unsqueeze(axis=0),
+                                                th_trans=self.trans.unsqueeze(axis=0),
+                                                th_offsets=self.offsets.unsqueeze(axis=0),
+                                                return_lbs = return_lbs)
+            return verts[0]
