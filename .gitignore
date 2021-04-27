@@ -1,0 +1,5 @@
+*.obj
+*.ipynb
+*.pyc
+*.ply
+*.tar

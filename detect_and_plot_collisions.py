@@ -49,7 +49,7 @@ if __name__ == "__main__":
     # mesh_fn = args.mesh_fn
     # max_collisions = args.max_collisions
 
-    mesh_fn = './out_dir29/Pablo_outdoor.obj'
+    mesh_fn = './out_dir28/027_1_2.obj'
     max_collisions = 8
     input_mesh = trimesh.load(mesh_fn)
     # trimesh.smoothing.filter_humphrey(input_mesh, iterations=2)
@@ -58,10 +58,8 @@ if __name__ == "__main__":
     # import pdb
     # pdb.set_trace()
 
-    input_mesh = trimesh.graph.split(input_mesh)[1]
-    import pdb
-    pdb.set_trace()
-    trimesh.exchange.export.export_mesh(input_mesh, './out_dir29/Pablo_outdoor'+'_cleaned.obj')
+    input_mesh = trimesh.graph.split(input_mesh)[0]
+    trimesh.exchange.export.export_mesh(input_mesh, './out_dir28/027_1_2'+'_cleaned.obj')
 
 
     # pifu_fn = './out_dir6/helge_scaled.obj'

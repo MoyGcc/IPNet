@@ -21,7 +21,6 @@ from tqdm import tqdm
 
 from fit_SMPL import save_meshes, backward_step
 from fit_SMPLD import optimize_offsets
-from post_mesh_fix import optimize_offsets_only
 # from fit_SMPLD import forward_step as forward_step_offsets
 from lib.smpl_paths import SmplPaths
 from lib.th_smpl_prior import get_prior
@@ -402,7 +401,7 @@ if __name__ == "__main__":
     # args.outer_path = '/home/chen/IPNet_SMPLX/output_zjdong/full.ply'
     # args.gender = 'male'
 
-    args.outer_path = '/home/chen/IPNet_SMPLX/assets/Pablo_outdoor_cleaned_scaled.obj'
+    args.outer_path = '/home/chen/IPNet_SMPLX/assets/027_1_2_cleaned_scaled.obj'
     args.gender = 'male'
     _, _, _ = fit_SMPL([args.inner_path], scan_labels=[args.inner_labels], display=args.display, save_path=args.save_path,
                        scale_file=[args.scale_file], gender=args.gender)

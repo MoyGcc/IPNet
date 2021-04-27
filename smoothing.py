@@ -44,7 +44,7 @@ if __name__ == "__main__":
         
     batch_size = 1
     
-    out_dir = './out_dir15/'
+    out_dir = './out_dir28/'
     gender = 'male'
     model_path = out_dir + 'full_smpld.pkl'
     model = pkl.load(open(model_path, 'rb'), encoding='latin1')
